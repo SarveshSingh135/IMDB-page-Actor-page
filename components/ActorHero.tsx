@@ -6,15 +6,18 @@ import { useEffect, useState } from "react"
 
 export default function ActorHero({
   id,
-  movies,
+  movies = [],
 }: {
   id: string
   movies: any[]
 }) {
+
   const [bgIndex, setBgIndex] = useState(0)
 
-  // Auto sliding background
+  // Prevent crash if movies empty
   useEffect(() => {
+    if (movies.length === 0) return
+
     const interval = setInterval(() => {
       setBgIndex((prev) => (prev + 1) % movies.length)
     }, 4000)
@@ -22,14 +25,17 @@ export default function ActorHero({
     return () => clearInterval(interval)
   }, [movies.length])
 
+  // Safe Poster Handling
   const bgPoster =
-    movies[bgIndex]?.Poster !== "N/A"
-      ? movies[bgIndex]?.Poster
+    movies?.[bgIndex]?.Poster &&
+    movies?.[bgIndex]?.Poster !== "N/A"
+      ? movies[bgIndex].Poster
       : "/no-image.png"
 
   const mainPoster =
-    movies[0]?.Poster !== "N/A"
-      ? movies[0]?.Poster
+    movies?.[0]?.Poster &&
+    movies?.[0]?.Poster !== "N/A"
+      ? movies[0].Poster
       : "/no-image.png"
 
   const rating = (Math.random() * 3 + 7).toFixed(1)
@@ -38,19 +44,21 @@ export default function ActorHero({
     <section className="relative min-h-[90vh] flex items-center px-12 overflow-hidden bg-black">
 
       {/* AUTO SLIDING BLUR BACKGROUND */}
-      <motion.div
-        key={bgIndex}
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 1 }}
-        className="absolute inset-0 -z-20"
-      >
-        <img
-          src={bgPoster}
-          className="w-full h-full object-cover blur-3xl brightness-40 scale-110"
-          alt="bg"
-        />
-      </motion.div>
+      {movies.length > 0 && (
+        <motion.div
+          key={bgIndex}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 1 }}
+          className="absolute inset-0 -z-20"
+        >
+          <img
+            src={bgPoster}
+            className="w-full h-full object-cover blur-3xl brightness-40 scale-110"
+            alt="background poster"
+          />
+        </motion.div>
+      )}
 
       {/* Dark overlay */}
       <div className="absolute inset-0 bg-black/60 -z-10" />
@@ -70,12 +78,14 @@ export default function ActorHero({
               bg-clip-text text-transparent
             "
           >
-            {id}
+            {id || "Unknown Actor"}
           </motion.h1>
 
           <p className="text-zinc-300 mt-6 text-lg max-w-md">
             Explore the cinematic journey of{" "}
-            <span className="text-white font-semibold">{id}</span>.
+            <span className="text-white font-semibold">
+              {id || "this actor"}
+            </span>.
           </p>
 
           <div className="flex gap-6 mt-8">
@@ -85,7 +95,7 @@ export default function ActorHero({
 
         </div>
 
-        {/* RIGHT SIDE - 3D TILT POSTER */}
+        {/* RIGHT SIDE */}
         <motion.div
           whileHover={{
             rotateY: 10,
@@ -95,11 +105,11 @@ export default function ActorHero({
           transition={{ type: "spring", stiffness: 200 }}
           className="flex justify-center"
         >
-          <div className="relative w-[340px] h-[500px] perspective-1000">
+          <div className="relative w-[340px] h-[500px]">
 
             <Image
               src={mainPoster}
-              alt={id}
+              alt={`${id || "Actor"} official poster`}
               fill
               className="rounded-3xl object-cover shadow-2xl"
             />
@@ -113,12 +123,6 @@ export default function ActorHero({
         </motion.div>
 
       </div>
-
-      {/* Floating particles */}
-      <div className="absolute inset-0 pointer-events-none -z-10">
-        <div className="w-full h-full bg-[radial-gradient(circle_at_20%_20%,rgba(255,255,255,0.05),transparent_40%),radial-gradient(circle_at_80%_80%,rgba(255,255,255,0.05),transparent_40%)]" />
-      </div>
-
     </section>
   )
 }

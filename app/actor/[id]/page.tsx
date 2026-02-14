@@ -1,14 +1,12 @@
 import FilmographyExplorer from "@/components/FilmographyExplorer"
 import ActorHero from "@/components/ActorHero"
 
-export const revalidate = 60 // ISR
+export const revalidate = 60
 
 async function getMovies(name: string) {
   const res = await fetch(
     `https://www.omdbapi.com/?apikey=${process.env.OMDB_API_KEY}&s=${name}`,
-    {
-      next: { revalidate: 60 },
-    }
+    { next: { revalidate: 60 } }
   )
 
   return res.json()
@@ -17,14 +15,12 @@ async function getMovies(name: string) {
 export default async function ActorPage({
   params,
 }: {
-  params: { id: string }
+  params: Promise<{ id: string }>
 }) {
-  const { id } = params
+  // ✅ NEXT 16 FIX — params is a Promise
+  const { id } = await params
 
   const data = await getMovies(id)
-  console.log("DATA:", data)
-console.log("SEARCH:", data.Search)
-
 
   if (!data || data.Response === "False") {
     return (
@@ -38,15 +34,11 @@ console.log("SEARCH:", data.Search)
 
   return (
     <main className="bg-black text-white">
+      <ActorHero id={cleanId} movies={movies} />
 
-      {/* HERO SECTION */}
-      <ActorHero id={id} movies={movies} />
-
-      {/* FILMOGRAPHY GRID */}
       <div className="px-12 py-16">
         <FilmographyExplorer movies={movies} />
       </div>
-
     </main>
   )
 }
