@@ -22,6 +22,9 @@ export default async function ActorPage({
   const { id } = params
 
   const data = await getMovies(id)
+  console.log("DATA:", data)
+console.log("SEARCH:", data.Search)
+
 
   if (!data || data.Response === "False") {
     return (
