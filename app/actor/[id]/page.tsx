@@ -20,7 +20,11 @@ export default async function ActorPage({
   // ✅ NEXT 16 FIX — params is a Promise
   const { id } = await params
 
-  const data = await getMovies(id)
+  
+  const cleanId = decodeURIComponent(id || "").trim()
+
+  const data = await getMovies(cleanId)
+
 
   if (!data || data.Response === "False") {
     return (
