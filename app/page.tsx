@@ -7,8 +7,9 @@ import Link from "next/link"
 import MovieCard from "@/components/MovieCard"
 import { useTheme } from "@/context/ThemeContext"
 
+export const dynamic = "force-dynamic"
+
 export default function HomePage() {
-  // 🔥 ALL HOOKS TOP PE (IMPORTANT)
   const searchParams = useSearchParams()
   const router = useRouter()
   const { theme, toggleTheme } = useTheme()
@@ -17,32 +18,22 @@ export default function HomePage() {
   const [search, setSearch] = useState("")
   const [page, setPage] = useState(1)
 
-  const query = searchParams.get("q") || ""
-
-  // ✅ ALL useEffect ek sath
+  // mount fix
   useEffect(() => {
     setMounted(true)
   }, [])
 
+  const query = searchParams.get("q") || ""
+
+  // URL sync
   useEffect(() => {
     setSearch(query)
   }, [query])
 
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      if (search) {
-        setPage(1)
-        router.push(`/?q=${search}`)
-      }
-    }, 500)
-
-    return () => clearTimeout(timer)
-  }, [search, router])
-
-  // 🎬 API fetch
-  const fetchMovies = async (q: string, p: number) => {
+  // API fetch
+  const fetchMovies = async (query: string, page: number) => {
     const res = await fetch(
-      `https://www.omdbapi.com/?apikey=${process.env.NEXT_PUBLIC_OMDB_API_KEY}&s=${q}&page=${p}`
+      `https://www.omdbapi.com/?apikey=${process.env.NEXT_PUBLIC_OMDB_API_KEY}&s=${query}&page=${page}`
     )
 
     const data = await res.json()
@@ -54,20 +45,32 @@ export default function HomePage() {
     return data
   }
 
-  // 🔥 React Query (hook bhi upar hi hona chahiye)
+  // React Query
   const { data, isLoading, error } = useQuery({
     queryKey: ["movies", query, page],
     queryFn: () => fetchMovies(query, page),
     enabled: !!query,
   })
 
-  // 🔥 CONDITION AFTER ALL HOOKS
+  // debounce search
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (search) {
+        setPage(1)
+        router.push(`/?q=${search}`)
+      }
+    }, 500)
+
+    return () => clearTimeout(timer)
+  }, [search, router])
+
+  // 🔥 VERY IMPORTANT (hydration + prerender fix)
   if (!mounted) return null
 
   return (
     <div className="min-h-screen bg-white text-black dark:bg-black dark:text-white p-6">
 
-      {/* 🔝 Navbar */}
+      {/* Navbar */}
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-xl font-bold">🎬 Movie App</h1>
 
@@ -87,7 +90,7 @@ export default function HomePage() {
         </div>
       </div>
 
-      {/* 🔍 Search */}
+      {/* Search */}
       <div className="flex gap-2 mb-6">
         <input
           value={search}
@@ -107,20 +110,20 @@ export default function HomePage() {
         </button>
       </div>
 
-      {/* 🎬 Title */}
+      {/* Title */}
       <h2 className="text-2xl font-bold mb-4">
         {query ? `${query.toUpperCase()} Movies` : "Movies"}
       </h2>
 
-      {/* ❌ Error */}
+      {/* Error */}
       {error && (
         <p className="text-red-500">{(error as Error).message}</p>
       )}
 
-      {/* ⏳ Loading */}
+      {/* Loading */}
       {isLoading && <p>Loading...</p>}
 
-      {/* 🎬 Movies */}
+      {/* Movies */}
       {!isLoading && data?.Search && (
         <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
           {data.Search.map((movie: any) => (
@@ -129,12 +132,12 @@ export default function HomePage() {
         </div>
       )}
 
-      {/* 😢 Empty */}
+      {/* Empty */}
       {!isLoading && !data?.Search && query && (
         <p>No results found 😢</p>
       )}
 
-      {/* 🔄 Pagination */}
+      {/* Pagination */}
       {!isLoading && data?.Search && (
         <div className="flex justify-center gap-4 mt-6">
           <button
@@ -152,6 +155,7 @@ export default function HomePage() {
           </button>
         </div>
       )}
+
     </div>
   )
 }
