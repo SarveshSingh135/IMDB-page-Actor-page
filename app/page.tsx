@@ -1,4 +1,5 @@
 "use client"
+
 import { useEffect, useState } from "react"
 import { useSearchParams, useRouter } from "next/navigation"
 import { useQuery } from "@tanstack/react-query"
@@ -6,18 +7,33 @@ import Link from "next/link"
 import MovieCard from "@/components/MovieCard"
 import { useTheme } from "@/context/ThemeContext"
 
+// ✅ IMPORTANT for Vercel prerender error fix
+export const dynamic = "force-dynamic"
+
 export default function HomePage() {
+
+  // 🔥 ALL HOOKS TOP PE
   const searchParams = useSearchParams()
   const router = useRouter()
-
   const { theme, toggleTheme } = useTheme()
+
+  const [mounted, setMounted] = useState(false)
+  const [search, setSearch] = useState("")
+  const [page, setPage] = useState(1)
+
+  // ✅ mounted fix (hydration issue solve)
+  useEffect(() => {
+    setMounted(true)
+  }, [])
 
   const query = searchParams.get("q") || ""
 
-  const [search, setSearch] = useState(query)
-  const [page, setPage] = useState(1)
+  // 🔁 sync search with URL
+  useEffect(() => {
+    setSearch(query)
+  }, [query])
 
-  // 🎬 Fetch movies
+  // 🎬 API fetch
   const fetchMovies = async (query: string, page: number) => {
     const res = await fetch(
       `https://www.omdbapi.com/?apikey=${process.env.NEXT_PUBLIC_OMDB_API_KEY}&s=${query}&page=${page}`
@@ -37,11 +53,9 @@ export default function HomePage() {
     queryKey: ["movies", query, page],
     queryFn: () => fetchMovies(query, page),
     enabled: !!query,
-    retry: 2,
-    staleTime: 1000 * 60 * 5,
   })
 
-  // 🔍 Debounce
+  // 🔍 debounce search
   useEffect(() => {
     const timer = setTimeout(() => {
       if (search) {
@@ -51,60 +65,38 @@ export default function HomePage() {
     }, 500)
 
     return () => clearTimeout(timer)
-  }, [search])
+  }, [search, router])
 
   return (
-    <div className="min-h-screen bg-white text-black dark:bg-linear-to-b dark:from-black dark:via-gray-900 dark:to-black dark:text-white p-6 transition-all duration-300">
+    <div className="min-h-screen bg-white text-black dark:bg-black dark:text-white p-6">
 
-      {/* 🔝 Top Bar */}
+      {/* 🔝 Navbar */}
       <div className="flex justify-between items-center mb-6">
+        <h1 className="text-xl font-bold">🎬 Movie App</h1>
 
-        <h1 className="text-xl font-bold">
-          🎬 Movie App
-        </h1>
-
-        <div className="flex gap-3 items-center">
-
-          {/* 🌗 Theme Toggle */}
+        <div className="flex gap-3">
           <button
             onClick={toggleTheme}
-            className="px-3 py-2 rounded-lg bg-gray-800 text-white hover:bg-gray-700 transition"
+            className="px-3 py-2 rounded bg-gray-800 text-white"
           >
             {theme === "dark" ? "🌞" : "🌙"}
           </button>
 
-          {/* ⭐ Watchlist */}
           <Link href="/watchlist">
-            <button className="bg-yellow-500 px-4 py-2 rounded text-black font-bold hover:bg-yellow-400 transition">
+            <button className="bg-yellow-500 px-4 py-2 rounded text-black">
               ⭐ Watchlist
             </button>
           </Link>
-
         </div>
-      </div>
-
-      {/* 🎥 HERO SECTION */}
-      <div className="mb-8 rounded-xl overflow-hidden relative h-62.5 flex items-end p-6 bg-[url('https://images.unsplash.com/photo-1524985069026-dd778a71c7b4')] bg-cover bg-center">
-
-        <div className="absolute inset-0 bg-black/60"></div>
-
-        <div className="relative z-10">
-          <h1 className="text-3xl font-bold">🎬 Movie Explorer</h1>
-          <p className="text-gray-300 text-sm">
-            Search & save your favorite movies
-          </p>
-        </div>
-
       </div>
 
       {/* 🔍 Search */}
       <div className="flex gap-2 mb-6">
-
         <input
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder="Search movies..."
-          className="p-3 w-full bg-gray-900 border border-gray-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-yellow-500"
+          className="p-3 w-full bg-gray-900 text-white rounded"
         />
 
         <button
@@ -112,59 +104,42 @@ export default function HomePage() {
             setPage(1)
             router.push(`/?q=${search}`)
           }}
-          className="bg-yellow-500 px-4 py-2 rounded text-black font-bold hover:bg-yellow-400 transition"
+          className="bg-yellow-500 px-4 py-2 rounded text-black"
         >
           Search
         </button>
-
       </div>
 
       {/* 🎬 Title */}
-      <h1 className="text-2xl font-bold mb-4">
-        🔥 {query ? `${query.toUpperCase()} Movies` : "Movies"}
-      </h1>
-
-      {!query && (
-        <p className="text-gray-400">Search for movies 🔍</p>
-      )}
+      <h2 className="text-2xl font-bold mb-4">
+        {query ? `${query.toUpperCase()} Movies` : "Movies"}
+      </h2>
 
       {/* ❌ Error */}
       {error && (
-        <p className="text-red-500">
-          {(error as Error).message}
-        </p>
+        <p className="text-red-500">{(error as Error).message}</p>
       )}
 
       {/* ⏳ Loading */}
-      {isLoading && (
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-6">
-          {Array.from({ length: 10 }).map((_, i) => (
-            <div
-              key={i}
-              className="h-60 bg-gray-800 animate-pulse rounded"
-            />
-          ))}
-        </div>
-      )}
+      {isLoading && <p>Loading...</p>}
 
       {/* 🎬 Movies */}
       {!isLoading && data?.Search && (
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-6">
-          {data.Search.map((movie: any, index: number) => (
-            <MovieCard key={movie.imdbID + index} movie={movie} />
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+          {data.Search.map((movie: any) => (
+            <MovieCard key={movie.imdbID} movie={movie} />
           ))}
         </div>
       )}
 
       {/* 😢 Empty */}
       {!isLoading && !data?.Search && query && (
-        <p className="text-gray-400">No results found 😢</p>
+        <p>No results found 😢</p>
       )}
 
       {/* 🔄 Pagination */}
       {!isLoading && data?.Search && (
-        <div className="flex justify-center gap-4 mt-8">
-
+        <div className="flex justify-center gap-4 mt-6">
           <button
             onClick={() => setPage((p) => Math.max(p - 1, 1))}
             className="bg-gray-700 px-4 py-2 rounded"
@@ -178,7 +153,6 @@ export default function HomePage() {
           >
             Next
           </button>
-
         </div>
       )}
 
