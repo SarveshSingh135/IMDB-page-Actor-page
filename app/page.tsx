@@ -7,12 +7,8 @@ import Link from "next/link"
 import MovieCard from "@/components/MovieCard"
 import { useTheme } from "@/context/ThemeContext"
 
-// ✅ IMPORTANT for Vercel prerender error fix
-export const dynamic = "force-dynamic"
-
 export default function HomePage() {
-
-  // 🔥 ALL HOOKS TOP PE
+  // 🔥 ALL HOOKS TOP PE (IMPORTANT)
   const searchParams = useSearchParams()
   const router = useRouter()
   const { theme, toggleTheme } = useTheme()
@@ -21,22 +17,32 @@ export default function HomePage() {
   const [search, setSearch] = useState("")
   const [page, setPage] = useState(1)
 
-  // ✅ mounted fix (hydration issue solve)
+  const query = searchParams.get("q") || ""
+
+  // ✅ ALL useEffect ek sath
   useEffect(() => {
     setMounted(true)
   }, [])
 
-  const query = searchParams.get("q") || ""
-
-  // 🔁 sync search with URL
   useEffect(() => {
     setSearch(query)
   }, [query])
 
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (search) {
+        setPage(1)
+        router.push(`/?q=${search}`)
+      }
+    }, 500)
+
+    return () => clearTimeout(timer)
+  }, [search, router])
+
   // 🎬 API fetch
-  const fetchMovies = async (query: string, page: number) => {
+  const fetchMovies = async (q: string, p: number) => {
     const res = await fetch(
-      `https://www.omdbapi.com/?apikey=${process.env.NEXT_PUBLIC_OMDB_API_KEY}&s=${query}&page=${page}`
+      `https://www.omdbapi.com/?apikey=${process.env.NEXT_PUBLIC_OMDB_API_KEY}&s=${q}&page=${p}`
     )
 
     const data = await res.json()
@@ -48,24 +54,15 @@ export default function HomePage() {
     return data
   }
 
-  // 🔥 React Query
+  // 🔥 React Query (hook bhi upar hi hona chahiye)
   const { data, isLoading, error } = useQuery({
     queryKey: ["movies", query, page],
     queryFn: () => fetchMovies(query, page),
     enabled: !!query,
   })
 
-  // 🔍 debounce search
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      if (search) {
-        setPage(1)
-        router.push(`/?q=${search}`)
-      }
-    }, 500)
-
-    return () => clearTimeout(timer)
-  }, [search, router])
+  // 🔥 CONDITION AFTER ALL HOOKS
+  if (!mounted) return null
 
   return (
     <div className="min-h-screen bg-white text-black dark:bg-black dark:text-white p-6">
@@ -155,7 +152,6 @@ export default function HomePage() {
           </button>
         </div>
       )}
-
     </div>
   )
 }
