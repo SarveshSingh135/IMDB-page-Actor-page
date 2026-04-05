@@ -1,7 +1,7 @@
 export default function Loading() {
   return (
-    <div className="p-6">
-      <p>Loading actor data...</p>
-    </div>
+    <h1 className="bg-black text-white min-h-screen flex items-center justify-center text-xl">
+      Loading actor data...
+    </h1>
   )
 }

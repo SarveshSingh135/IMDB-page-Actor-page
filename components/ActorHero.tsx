@@ -14,7 +14,7 @@ export default function ActorHero({
 
   const [bgIndex, setBgIndex] = useState(0)
 
-  // Prevent crash if movies empty
+  // Background slider
   useEffect(() => {
     if (movies.length === 0) return
 
@@ -25,7 +25,7 @@ export default function ActorHero({
     return () => clearInterval(interval)
   }, [movies.length])
 
-  // Safe Poster Handling
+  // Poster handling
   const bgPoster =
     movies?.[bgIndex]?.Poster &&
     movies?.[bgIndex]?.Poster !== "N/A"
@@ -38,12 +38,15 @@ export default function ActorHero({
       ? movies[0].Poster
       : "/no-image.png"
 
-  const rating = (Math.random() * 3 + 7).toFixed(1)
+  // ✅ HYDRATION SAFE VALUES
+  const credits = movies.length
+  const awards = Math.floor(movies.length / 2)
+  const rating = 8.5
 
   return (
     <section className="relative min-h-[90vh] flex items-center px-12 overflow-hidden bg-black">
 
-      {/* AUTO SLIDING BLUR BACKGROUND */}
+      {/* BACKGROUND */}
       {movies.length > 0 && (
         <motion.div
           key={bgIndex}
@@ -60,12 +63,12 @@ export default function ActorHero({
         </motion.div>
       )}
 
-      {/* Dark overlay */}
+      {/* Overlay */}
       <div className="absolute inset-0 bg-black/60 -z-10" />
 
       <div className="grid md:grid-cols-2 gap-16 items-center w-full">
 
-        {/* LEFT SIDE */}
+        {/* LEFT */}
         <div>
 
           <motion.h1
@@ -74,7 +77,7 @@ export default function ActorHero({
             transition={{ duration: 0.8 }}
             className="
               text-7xl font-extrabold capitalize
-              bg-gradient-to-r from-yellow-400 via-pink-500 to-purple-500
+              bg-linear-to-r from-yellow-400 via-pink-500 to-purple-500
               bg-clip-text text-transparent
             "
           >
@@ -88,14 +91,15 @@ export default function ActorHero({
             </span>.
           </p>
 
+          {/* STATS */}
           <div className="flex gap-6 mt-8">
-            <Stat label="Credits" value={movies.length} />
-            <Stat label="Awards" value={Math.floor(Math.random() * 10)} />
+            <Stat label="Credits" value={credits} />
+            <Stat label="Awards" value={awards} />
           </div>
 
         </div>
 
-        {/* RIGHT SIDE */}
+        {/* RIGHT */}
         <motion.div
           whileHover={{
             rotateY: 10,
@@ -105,7 +109,7 @@ export default function ActorHero({
           transition={{ type: "spring", stiffness: 200 }}
           className="flex justify-center"
         >
-          <div className="relative w-[340px] h-[500px]">
+          <div className="relative w-80 h-125">
 
             <Image
               src={mainPoster}
@@ -114,7 +118,7 @@ export default function ActorHero({
               className="rounded-3xl object-cover shadow-2xl"
             />
 
-            {/* IMDb Badge */}
+            {/* ⭐ Rating */}
             <div className="absolute top-4 left-4 bg-yellow-400 text-black px-3 py-1 rounded-full text-sm font-bold shadow-lg">
               ⭐ {rating}
             </div>

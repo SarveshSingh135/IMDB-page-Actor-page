@@ -2,8 +2,8 @@
 
 export default function Error() {
   return (
-    <div className="p-6 text-red-500">
+    <h1 className="text-red-500 p-5">
       Something went wrong 😢
-    </div>
+    </h1>
   )
 }
