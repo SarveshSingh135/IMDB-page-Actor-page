@@ -1,14 +1,19 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { addToWatchlist, isInWatchlist } from "@/lib/watchlist";
 
 export default function MovieCard({ movie }: any) {
+  const [mounted, setMounted] = useState(false);
+  const [added, setAdded] = useState(false);
 
-  // ✅ check already added or not
-  const added = isInWatchlist(movie?.imdbID);
+  // ✅ run only on client
+  useEffect(() => {
+    setMounted(true);
+    setAdded(isInWatchlist(movie?.imdbID));
+  }, [movie?.imdbID]);
 
-  // ✅ handle add
   const handleAdd = () => {
     addToWatchlist({
       imdbID: movie.imdbID,
@@ -17,13 +22,16 @@ export default function MovieCard({ movie }: any) {
       Year: movie.Year,
     });
 
+    setAdded(true);
     alert("Added to Watchlist ✅");
   };
+
+  // ❗ SSR safe
+  if (!mounted) return null;
 
   return (
     <div className="bg-gray-800 p-3 rounded shadow">
 
-      {/* 🎬 Click → Movie Details */}
       <Link href={`/movie/${movie.imdbID}`}>
         <img
           src={movie.Poster}
@@ -32,13 +40,9 @@ export default function MovieCard({ movie }: any) {
         />
       </Link>
 
-      {/* 🎬 Title */}
       <h2 className="text-sm font-bold">{movie.Title}</h2>
-
-      {/* 📅 Year */}
       <p className="text-gray-400 text-xs">{movie.Year}</p>
 
-      {/* ⭐ Add Button */}
       <button
         onClick={handleAdd}
         disabled={added}
